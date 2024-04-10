@@ -1,6 +1,5 @@
 import arcade
 import arcade.color
-import arcade.gui
 import random
 
 

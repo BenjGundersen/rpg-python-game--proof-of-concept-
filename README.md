@@ -4,6 +4,8 @@ I wanted to try and see if I could replicate RPG game's style of battles within 
 
 The Player Sprite art does not belong to me, credits belong to RGG Studios, of SEGA.
 
+To try it yourself, you'll need to install the Arcade package on your system (if you don't already have it). Make sure you have Python installed and run ```pip install arcade``` in a command prompt if you are using a Windows machine.
+
 [Software Demo Video](https://youtu.be/HEglP2VV7Q4)
 
 # Development Environment

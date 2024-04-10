@@ -1,4 +1,8 @@
 import arcade
+import arcade.color
+import arcade.gui
+import random
+
 
 SCREEN_TITLE = "RPG Battle Simulator"
 
@@ -16,10 +20,9 @@ GRAVITY = 1
 PLAYER_JUMP_SPEED = 20
 
 
-class MyGame(arcade.Window):
+class MyGame(arcade.View):
     def __init__(self):
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT,
-                         SCREEN_TITLE, resizable=True)
+        super().__init__()
 
         self.tile_map = None
 
@@ -34,6 +37,9 @@ class MyGame(arcade.Window):
         self.camera_gui = None
 
         self.score = 0
+
+        self.width = SCREEN_WIDTH
+        self.height = SCREEN_HEIGHT
 
         self.left_key_down = False
         self.right_key_down = False
@@ -58,6 +64,8 @@ class MyGame(arcade.Window):
             arcade.set_background_color(self.tile_map.background_color)
 
         self.score = 0
+
+        arcade.set_background_color(arcade.color.SKY_BLUE)
 
         src = "images/left.png"
         self.player_sprite = arcade.Sprite(src, CHARACTER_SCALING)
@@ -108,6 +116,10 @@ class MyGame(arcade.Window):
             self.right_key_down = True
             self.update_player_speed()
 
+        elif key == arcade.key.ESCAPE:
+            pause = PauseView(self)
+            self.window.show_view(pause)
+
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.LEFT or key == arcade.key.A:
@@ -147,7 +159,8 @@ class MyGame(arcade.Window):
         )
 
         for enemy in enemies_hit_list:
-            enemy.battle()
+            view = BattleView(self)
+            self.window.show_view(view)
             enemy.remove_from_sprite_lists()
 
         self.center_camera_to_player()
@@ -158,11 +171,97 @@ class MyGame(arcade.Window):
         self.camera_gui.resize(int(width), int(height))
 
 
-def main():
-    window = MyGame()
-    window.setup()
-    arcade.run()
+class BattleView(arcade.View):
+    def __init__(self, my_game):
+        super().__init__()
+        self.my_game = my_game
+    PLAYER_HEALTH = 30
+    PLAYER_ATK = 10
 
+    ENEMY_HEALTH = 30
+    ENEMY_ATK = 5
+    isPlayerTurn = True
+    isEnemyGuarding = False
+
+    def on_show(self):
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_GRAY)
+        arcade.set_viewport(0, SCREEN_WIDTH -1, 0, SCREEN_HEIGHT -1)
+
+    def on_draw(self):
+        arcade.start_render()
+        arcade.draw_text("BATTLE!!!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150, arcade.color.WHITE, font_size=50, anchor_x="center")
+        arcade.draw_text("Press A to advance.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 120, arcade.color.WHITE, font_size=20, anchor_x="center")
+
+        arcade.draw_text("Player", SCREEN_WIDTH / 2 -450, SCREEN_HEIGHT / 2, arcade.color.WHITE, font_size=50, anchor_x="left")
+        arcade.draw_text(f"HP: {BattleView.PLAYER_HEALTH}", SCREEN_WIDTH / 2 - 450, SCREEN_HEIGHT / 2 - 100, arcade.color.WHITE, font_size=50, anchor_x="left")
+
+        arcade.draw_text("Enemy", SCREEN_WIDTH / 2 + 450, SCREEN_HEIGHT / 2, arcade.color.WHITE, font_size=50, anchor_x="right")
+        arcade.draw_text(f"HP: {BattleView.ENEMY_HEALTH}", SCREEN_WIDTH / 2 + 450, SCREEN_HEIGHT / 2 - 100, arcade.color.WHITE, font_size=50, anchor_x="right")
+
+    def on_key_press(self, key, _modifiers):
+        if BattleView.ENEMY_HEALTH == 0:
+            arcade.set_background_color(arcade.color.SKY_BLUE)
+            self.window.show_view(self.my_game)
+
+        if key == arcade.key.A and BattleView.isPlayerTurn == True and BattleView.ENEMY_HEALTH > 0:
+            if BattleView.isEnemyGuarding == False:
+                BattleView.ENEMY_HEALTH -= BattleView.PLAYER_ATK
+                BattleView.isPlayerTurn = False
+            elif BattleView.isEnemyGuarding == True:
+                BattleView.isEnemyGuarding = False
+                BattleView.isPlayerTurn = False
+            BattleView.on_draw(self)
+        
+        elif key == arcade.key.A and BattleView.isPlayerTurn == False:
+            enemy_choice = random.randint(0,2)
+            if enemy_choice == 1:
+                BattleView.PLAYER_HEALTH -= BattleView.ENEMY_ATK
+                BattleView.isPlayerTurn = True
+                BattleView.on_draw(self)
+            elif enemy_choice == 2:
+                BattleView.isEnemyGuarding = True
+
+            
+
+
+class PauseView(arcade.View):
+    def __init__(self, my_game):
+        super().__init__()
+        self.my_game = my_game
+
+    def on_show_view(self):
+        arcade.set_background_color(arcade.color.ORANGE)
+
+    def on_draw(self):
+        self.clear()
+        player_sprite = self.my_game.player_sprite
+        player_sprite.draw()
+        
+        arcade.draw_text("PAUSED", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50,
+                         arcade.color.BLACK, font_size=50, anchor_x="center")
+        
+        arcade.draw_text("Press Esc. to return",
+                         SCREEN_WIDTH / 2,
+                         SCREEN_HEIGHT / 2,
+                         arcade.color.BLACK,
+                         font_size=20,
+                         anchor_x="center")
+        
+    def on_key_press(self, key, _modifiers):
+        if key == arcade.key.ESCAPE:
+            arcade.set_background_color(arcade.color.SKY_BLUE)
+            self.window.show_view(self.my_game)
+
+
+
+
+
+def main():
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    start_view = MyGame()
+    window.show_view(start_view)
+    start_view.setup()
+    arcade.run()
 
 if __name__ == "__main__":
     main()
